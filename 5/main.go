@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"flag"
 	"fmt"
 	"time"
@@ -14,18 +13,15 @@ import (
 func main() {
 	timeLimit := flag.Duration("N", time.Second*3, "Execution time limit: e.g. '5s' is 5 seconds")
 	flag.Parse()
-
-	ctx, cancel := context.WithTimeout(context.Background(), *timeLimit)
-	defer cancel()
+	done := time.After(*timeLimit)
 
 	sender := func() <-chan int {
 		valueStream := make(chan int)
-
 		go func() {
 			defer close(valueStream)
 			for i := range 100 {
 				select {
-				case <-ctx.Done():
+				case <-done:
 					fmt.Printf("Time limit exceeded: %v\n", *timeLimit)
 					return
 				case valueStream <- i:
@@ -33,7 +29,6 @@ func main() {
 				}
 			}
 		}()
-
 		return valueStream
 	}
 

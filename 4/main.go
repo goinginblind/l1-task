@@ -67,9 +67,10 @@ func main() {
 	// dispense jobs
 	go func() {
 		for id, task := range tasks {
-			jobCh <- Job{
-				id:   id,
-				task: task,
+			select {
+			case <-ctx.Done():
+				return
+			case jobCh <- Job{id: id, task: task}:
 			}
 		}
 		close(jobCh) // normal termination

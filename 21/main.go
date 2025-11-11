@@ -4,6 +4,7 @@ import (
 	"container/list"
 	"context"
 	"errors"
+	"fmt"
 	"sync"
 )
 
@@ -30,6 +31,16 @@ import (
 //     (например, пакет А ожидает логгер обычный, а мы используем зап - пишем адпатер зап-обычный логгер)
 //  4. Интеграция существующего кода с новым, например, если мы меняем один пакет на другой - весь проект всё ещё ожидает
 //     интерфейс старого типа, а наш новый пакет не удовлетворяет такому интерфейсу - тут можно пользоваться адпатером.
+//
+// Плюсы:
+//  1. Упрощает тестирование, освобождает от внешних заисимостей (decoupling то есть)
+//  2. Упрощает процесс перехода от одной конкеретной имплементации к другой, потому что бизнес логика,
+//     использующая интерфейс, не зависима от конкретностей
+//
+// Минусы:
+//  1. Адаптер может упрощать то, что он "адаптирует", например терять часть методов конкретной низлежащей имплементации
+//     или детали реализации самих методов (например, после адаптации возвращаем не ошибку а bool).
+//  2. Больше вызовов функций - может влиять негативно если нам очень нужна производительность
 type Cache interface {
 	Get(ctx context.Context, key string) (string, error)
 	Set(ctx context.Context, key, value string) error
@@ -130,10 +141,10 @@ func (slc *SimpleLRUCache) Insert(key, value string) {
 	}
 }
 
-// NewManualCache creates a new instance of a simple lru cache
+// NewSimpleCache creates a new instance of a simple lru cache
 // and returns a pointer to it. If the argument provided is less
 // than 1, it sets the entriesCap of the cache to 1.
-func NewManualCache(entriesCap int) *SimpleLRUCache {
+func NewSimpleCache(entriesCap int) *SimpleLRUCache {
 	if entriesCap < 1 {
 		entriesCap = 1
 	}
@@ -145,4 +156,8 @@ func NewManualCache(entriesCap int) *SimpleLRUCache {
 }
 
 func main() {
+	var c Cache = &SimpleCacheAdapter{c: NewSimpleCache(5)}
+	c.Set(context.Background(), "key", "value")
+	v, _ := c.Get(context.Background(), "key")
+	fmt.Println(v)
 }

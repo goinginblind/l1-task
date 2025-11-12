@@ -17,11 +17,16 @@ import (
 // но обратите внимание на возможное переполнение для ещё больших значений.
 // Для очень больших чисел можно использовать math/big.
 
+// Operation holds the 'big.Float's to perform an operation on,
+// which is too, stored in this same struct - op field of type rune.
 type Operation struct {
 	a, b *big.Float
 	op   rune
 }
 
+// ParseFromLine splits the given input, creating an operation.
+// If the input contains too few arguments, it returns an ErrNotEnoughArgs.
+// If the input couldn't be parsef into big.Float, it returns ErrNonNumericArg.
 func ParseFromLine(input []byte) (*Operation, error) {
 	tokens := bytes.Fields(input)
 	if len(tokens) < 3 {
@@ -49,6 +54,7 @@ var (
 	ErrNotEnoughArgs = errors.New("too few arguments")
 )
 
+// GetResult performs the operation itself.
 func GetResult(o *Operation) (*big.Float, error) {
 	res := new(big.Float).Copy(o.a)
 	switch o.op {
@@ -73,6 +79,9 @@ const (
 	quit                = "quit"
 )
 
+// RunCalculator scans user input and displays the results - either for
+// performed operations or for the errors. Also allows the user to quit
+// without a <C-c> sigint - via 'quit' cmd.
 func RunCalculator() {
 	scanner := bufio.NewScanner(os.Stdin)
 	for scanner.Scan() {
@@ -95,5 +104,9 @@ func RunCalculator() {
 }
 
 func main() {
+	fmt.Println("Hi! This simple single-operation calculator supports: ")
+	fmt.Println("addition, subtraction, division and multiplication for pretty big numbers!")
+	fmt.Println("Example use: ", useMsg)
 	RunCalculator()
+	fmt.Println("Bye!")
 }
